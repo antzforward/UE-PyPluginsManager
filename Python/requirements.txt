@@ -1,0 +1,11 @@
+# UE5 Python项目主依赖文件
+# 包含基础依赖和子模块依赖
+
+# 基础依赖
+-r requirements/base.txt
+
+# 机器学习相关依赖（可选）
+-r requirements/ml.txt
+
+# 开发工具依赖（可选）
+-r requirements/dev.txt
