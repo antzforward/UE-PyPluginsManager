@@ -3,19 +3,29 @@ import os
 import sys
 import unreal
 import logging
+from pathlib import Path
 
-def init_logging(log_file):
+# singleInstance
+PROJ_ROOT: Path = None
+PROJ_CONTENT_ROOT: Path = None
+UE_LOGGER = None
+CWD = None
+PYTHON_EXE_PATH = None
+
+
+def init_logging(log_file: Path) -> bool:
     """初始化日志系统"""
-    log_dir = os.path.dirname(log_file)
+    global UE_LOGGER
+    log_dir = log_file.parent
     os.makedirs(log_dir, exist_ok=True)
-    
+
     logging.basicConfig(
         filename=log_file,
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S"
     )
-    
+
     # 同时输出到UE日志
     class UnrealLogHandler(logging.Handler):
         def emit(self, record):
@@ -26,23 +36,30 @@ def init_logging(log_file):
                 unreal.log_warning(msg)
             else:
                 unreal.log(msg)
-    
-    logging.getLogger().addHandler(UnrealLogHandler())
+
+    if not UE_LOGGER:
+        UE_LOGGER = UnrealLogHandler()
+        logging.getLogger().addHandler(UnrealLogHandler())
     logging.info("UE5 Python setup initialized")
 
-def get_project_root():
-    """获取项目根目录"""
-    return unreal.Paths.project_dir()
 
-def get_content_dir():
-    """获取Content目录"""
-    return unreal.Paths.project_content_dir()
+def get_project_root() -> Path:
+    """获取项目根目录,为了与UE环境匹配，转换成posix模式"""
+    global PROJ_ROOT
+    if not PROJ_ROOT:
+        PROJ_ROOT = Path(unreal.Paths.project_dir())
+    return PROJ_ROOT
 
-def get_script_dir():
-    """获取当前脚本目录"""
-    return os.path.dirname(os.path.abspath(__file__))
-    
-def get_ue_python_interpreter():
+
+def get_content_dir() -> Path:
+    """获取Content目录,为了与UE环境匹配，转换成posix模式"""
+    global PROJ_CONTENT_ROOT
+    if not PROJ_CONTENT_ROOT:
+        PROJ_CONTENT_ROOT = Path(unreal.Paths.project_content_dir())
+    return PROJ_CONTENT_ROOT
+
+
+def executable() -> str:
     # 在UE5.0及以上版本，可以使用以下方法
     if hasattr(unreal, 'get_interpreter_executable_path'):
         return unreal.get_interpreter_executable_path()
